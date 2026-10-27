@@ -1,0 +1,7 @@
+1 - Primeiro ative esse comando se caso não estiver habilitado.
+
+venv\Scripts\activate                                                                                                                     
+
+2 - Depois abra o sistema com o comando abaixo.
+
+python app.py 

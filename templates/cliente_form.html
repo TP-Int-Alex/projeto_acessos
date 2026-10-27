@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Visualizar' if somente_leitura else ('Editar' if cliente else 'Novo') }} Cliente{% endblock %}
+{% block header %}{{ 'Visualizar' if somente_leitura else ('Editar' if cliente else 'Novo') }} Cliente{% endblock %}
+{% block content %}
+<form method="POST" enctype="multipart/form-data" class="animate-fade">
+  <div class="card mb-3">
+    <div class="card-header"><i class="bi bi-building"></i> Dados do Cliente</div>
+    <div class="card-body row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Nome da Empresa *</label>
+        <input type="text" name="nome_empresa" class="form-control" required
+               value="{{ cliente.nome_empresa if cliente else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Identificação</label>
+        <input type="text" name="nome_identificacao" class="form-control"
+               value="{{ cliente.nome_identificacao if cliente else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+          <option value="ativo" {{ 'selected' if cliente and cliente.status=='ativo' }}>Ativo</option>
+          <option value="inativo" {{ 'selected' if cliente and cliente.status=='inativo' }}>Inativo</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Imagem / Logotipo</label>
+        <input type="file" name="imagem" class="form-control" accept="image/*">
+        {% if cliente and cliente.imagem_path %}
+        <img src="{{ url_for('clientes.uploads', fname=cliente.imagem_path) }}" class="mt-2 cliente-logo">
+        {% endif %}
+      </div>
+      <div class="col-12">
+        <label class="form-label">Observações Técnicas</label>
+        <textarea name="observacoes" class="form-control" rows="3">{{ cliente.observacoes if cliente else '' }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  {% if not cliente %}
+  <div class="card mb-3">
+    <div class="card-header"><i class="bi bi-key-fill"></i> Acesso (opcional)</div>
+    <div class="card-body row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Ambiente *</label>
+        <select name="ambiente" class="form-select">
+          <option value="T-CLOUD">T-CLOUD</option>
+          <option value="INTERNO">INTERNO</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Sistema / Serviço</label>
+        <input type="text" name="sistema_servico" class="form-control" placeholder="Ex: Protheus">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Usuário / Login</label>
+        <input type="text" name="usuario_login" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Senha</label>
+        <input type="password" name="senha" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Endereço / URL</label>
+        <input type="text" name="endereco" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Porta</label>
+        <input type="text" name="porta" class="form-control">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Observações do Acesso</label>
+        <textarea name="observacoes_acesso" class="form-control" rows="2"></textarea>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if acessos %}
+  <div class="card mb-3">
+    <div class="card-header"><i class="bi bi-list-ul"></i> Acessos Cadastrados</div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead><tr><th>Ambiente</th><th>Sistema</th><th>Login</th><th>Senha</th><th>Endereço</th><th>Porta</th></tr></thead>
+        <tbody>
+          {% for a in acessos %}
+          <tr>
+            <td><span class="badge bg-info">{{ a.ambiente_nome }}</span></td>
+            <td>{{ a.sistema_servico or '-' }}</td>
+            <td>{{ a.usuario_login or '-' }}</td>
+            <td>
+              {% if session.get('role') == 'ADM' %}
+                <span id="secret-{{ a.id }}" data-shown="0">••••••••</span>
+                <button type="button" class="btn btn-sm btn-link" onclick="toggleSecret({{ a.id }})">
+                  <i class="bi bi-eye"></i>
+                </button>
+              {% else %}
+                <span class="text-muted">restrito</span>
+              {% endif %}
+            </td>
+            <td>{{ a.endereco or '-' }}</td>
+            <td>{{ a.porta or '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not somente_leitura %}
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary btn-anim"><i class="bi bi-check-lg"></i> Salvar</button>
+    <a href="{{ url_for('clientes.listar') }}" class="btn btn-secondary">Cancelar</a>
+  </div>
+  {% else %}
+  <a href="{{ url_for('clientes.listar') }}" class="btn btn-secondary">Voltar</a>
+  <a href="{{ url_for('clientes.editar', cid=cliente.id) }}" class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a>
+  {% endif %}
+</form>
+{% endblock %}

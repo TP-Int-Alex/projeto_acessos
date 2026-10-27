@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar Cliente — Gestão Acessos</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background-color: #f9fafb; display: flex; min-height: 100vh; color: #111827; }
+        
+        .sidebar { width: 260px; background-color: #6c63ff; color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 10; }
+        .sidebar-header { padding: 30px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header h2 { font-size: 20px; font-weight: 800; }
+        .sidebar nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.8); text-decoration: none; padding: 14px 16px; border-radius: 8px; font-weight: 500; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
+        .nav-item.active { background-color: #ffffff; color: #6c63ff; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .nav-item svg { width: 20px; height: 20px; }
+
+        .main-content { flex: 1; margin-left: 260px; padding: 40px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .topbar h1 { font-size: 28px; font-weight: 700; }
+        
+        .topbar-actions { display: flex; gap: 12px; }
+        .btn-voltar { background-color: #e5e7eb; color: #374151; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-voltar:hover { background-color: #d1d5db; }
+        
+        .btn-copiar { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-copiar:hover { background-color: #059669; }
+
+        .grid-info { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 32px; border: 1px solid #f3f4f6; margin-bottom: 24px; }
+        .profile-header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 24px; }
+        .profile-img { width: 120px; height: 120px; border-radius: 12px; object-fit: cover; background-color: #f3f4f6; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .profile-name { font-size: 24px; font-weight: 700; color: #111827; }
+        .profile-sigla { font-size: 16px; color: #6b7280; margin-bottom: 12px; }
+        
+        .section-title { font-size: 16px; font-weight: 700; color: #6c63ff; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #f3f4f6; }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { font-size: 14px; color: #6b7280; font-weight: 500; }
+        .info-value { font-size: 14px; color: #111827; font-weight: 600; text-align: right; }
+        
+        .badge { display: inline-block; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .badge.local { background-color: #eff6ff; color: #3b82f6; }
+        .badge.tcloud { background-color: #f3f0ff; color: #6c63ff; }
+        .badge.status-ativo { background-color: #dcfce7; color: #166534; }
+        .badge.status-inativo { background-color: #fee2e2; color: #991b1b; }
+        
+        .aviso-copiado { display: none; position: fixed; bottom: 30px; right: 30px; background-color: #10b981; color: white; padding: 16px 24px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(16,185,129,0.3); z-index: 9999; }
+
+        /* RESPONSIVIDADE PARA CELULAR */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar { position: relative; width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; }
+            .sidebar-header { display: none; }
+            .sidebar nav { flex-direction: row; padding: 0; gap: 10px; width: 100%; overflow-x: auto; }
+            .nav-item { white-space: nowrap; padding: 10px 15px; font-size: 14px; }
+            
+            .main-content { margin-left: 0; padding: 20px; }
+            .topbar { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .topbar-actions { width: 100%; flex-direction: column; }
+            .btn-voltar, .btn-copiar { width: 100%; justify-content: center; }
+            
+            .grid-info { grid-template-columns: 1fr; }
+            .card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            <h2>Gestão Acessos</h2>
+        </div>
+        <nav>
+            <a href="/dashboard" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Dashboard</a>
+            <a href="/clientes" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Clientes</a>
+            
+            {% if session.get('usuario_nivel') == 'ADM' %}
+            <a href="/usuarios" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Usuários</a>
+            {% endif %}
+
+            {% if session.get('usuario_nivel') == 'ADM' or 'auditoria_visualizar' in session.get('usuario_permissoes', '') %}
+            <a href="/auditoria" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Auditoria</a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h1>Visualizar Cliente</h1>
+            
+            <div class="topbar-actions">
+                <button class="btn-copiar" id="btnCopiar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copiar Dados
+                </button>
+                
+                <a href="{{ url_for('clientes.index') }}" class="btn-voltar">Voltar para Lista</a>
+            </div>
+        </div>
+
+        <div class="grid-info">
+            <!-- Lado Esquerdo: Perfil -->
+            <div>
+                <div class="card">
+                    <div class="profile-header">
+                        {% if cliente['imagem_path'] %}
+                            <img src="{{ url_for('static', filename='uploads/' + cliente['imagem_path']) }}" class="profile-img">
+                        {% else %}
+                            <div class="profile-img" style="display:flex; align-items:center; justify-content:center; font-size:48px; color:#6c63ff; font-weight:bold;">
+                                {{ cliente['nome_empresa'][0] | upper }}
+                            </div>
+                        {% endif %}
+                        <div class="profile-name">{{ cliente['nome_empresa'] }}</div>
+                        <div class="profile-sigla">{{ cliente['nome_identificacao'] or 'Sem identificação' }}</div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <span class="badge {{ 'tcloud' if cliente['tipo_cliente'] == 'T-CLOUD' else 'local' }}">
+                                {{ cliente['tipo_cliente'] or 'LOCAL' }}
+                            </span>
+                            {% if cliente['status'] == 'inativo' %}
+                                <span class="badge status-inativo">Inativo</span>
+                            {% else %}
+                                <span class="badge status-ativo">Ativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lado Direito: Dados -->
+            <div>
+                <div class="card">
+                    <div class="section-title">Informações do Cliente</div>
+                    <div class="info-row">
+                        <span class="info-label">Versão do Protheus</span>
+                        <span class="info-value">{{ cliente['versao_protheus'] or '-' }}</span>
+                    </div>
+                </div>
+
+                <!-- Acesso Principal -->
+                <div class="card">
+                    <div class="section-title">Acesso do Sistema (Local / T-Cloud)</div>
+                    {% if dados_acesso.principal %}
+                        <div class="info-row">
+                            <span class="info-label">URL / IP</span>
+                            <span class="info-value">{{ dados_acesso.principal['endereco'] or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Login</span>
+                            <span class="info-value">{{ dados_acesso.principal['usuario_login'] or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Senha</span>
+                            <span class="info-value">{{ dados_acesso.principal['senha_cripto'] or '-' }}</span>
+                        </div>
+                    {% else %}
+                        <p style="color:#6b7280; font-size:14px;">Nenhum acesso principal cadastrado.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Acesso Protheus -->
+                <div class="card">
+                    <div class="section-title">Acesso Protheus</div>
+                    {% if dados_acesso.protheus %}
+                        <div class="info-row">
+                            <span class="info-label">Usuário</span>
+                            <span class="info-value">{{ dados_acesso.protheus['usuario_login'] or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Senha</span>
+                            <span class="info-value">{{ dados_acesso.protheus['senha_cripto'] or '-' }}</span>
+                        </div>
+                    {% else %}
+                        <p style="color:#6b7280; font-size:14px;">Nenhum acesso ao Protheus cadastrado.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Acesso Banco de Dados -->
+                <div class="card">
+                    <div class="section-title">Acesso ao Banco de Dados</div>
+                    {% if dados_acesso.banco %}
+                        <div class="info-row">
+                            <span class="info-label">Usuário</span>
+                            <span class="info-value">{{ dados_acesso.banco['usuario_login'] or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Senha</span>
+                            <span class="info-value">{{ dados_acesso.banco['senha_cripto'] or '-' }}</span>
+                        </div>
+                    {% else %}
+                        <p style="color:#6b7280; font-size:14px;">Nenhum acesso ao banco cadastrado.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Acesso Remoto e Windows -->
+                <div class="card">
+                    <div class="section-title">Acesso Remoto e Windows</div>
+                    {% if dados_acesso.anydesk or dados_acesso.windows %}
+                        {% if dados_acesso.anydesk %}
+                        <div class="info-row">
+                            <span class="info-label">ID AnyDesk</span>
+                            <span class="info-value">{{ dados_acesso.anydesk['usuario_login'] or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Senha AnyDesk</span>
+                            <span class="info-value">{{ dados_acesso.anydesk['senha_cripto'] or '-' }}</span>
+                        </div>
+                        {% endif %}
+                        {% if dados_acesso.windows %}
+                        <div class="info-row">
+                            <span class="info-label">Usuário Windows</span>
+                            <span class="info-value">{{ dados_acesso.windows['usuario_login'] or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Senha Windows</span>
+                            <span class="info-value">{{ dados_acesso.windows['senha_cripto'] or '-' }}</span>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p style="color:#6b7280; font-size:14px;">Nenhum acesso remoto cadastrado.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Portal do Cliente -->
+                <div class="card">
+                    <div class="section-title">Portal do Cliente</div>
+                    {% if cliente['portal_url'] or cliente['portal_login'] %}
+                        <div class="info-row">
+                            <span class="info-label">URL do Portal</span>
+                            <span class="info-value">{{ cliente['portal_url'] or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Login do Portal</span>
+                            <span class="info-value">{{ cliente['portal_login'] or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Senha do Portal</span>
+                            <span class="info-value">{{ cliente['portal_senha'] or '-' }}</span>
+                        </div>
+                    {% else %}
+                        <p style="color:#6b7280; font-size:14px;">Nenhum dado de portal cadastrado.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Descrição / Observações -->
+                <div class="card">
+                    <div class="section-title">Descrição / Observações</div>
+                    {% if cliente['observacoes'] %}
+                        <p style="color:#374151; font-size:14px; line-height:1.6; white-space: pre-wrap;">{{ cliente['observacoes'] }}</p>
+                    {% else %}
+                        <p style="color:#6b7280; font-size:14px;">Nenhuma descrição cadastrada.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <textarea id="textoOculto" style="position: absolute; left: -9999px;">
+=== DADOS DO CLIENTE ===
+Empresa: {{ cliente['nome_empresa'] }}
+Sigla: {{ cliente['nome_identificacao'] or 'Não informada' }}
+Tipo: {{ cliente['tipo_cliente'] or 'LOCAL' }}
+Status: {{ 'Ativo' if cliente['status'] != 'inativo' else 'Inativo' }}
+Versão Protheus: {{ cliente['versao_protheus'] or 'Não informada' }}
+
+=== ACESSO DO SISTEMA ===
+URL/IP: {{ dados_acesso.principal['endereco'] if dados_acesso.principal else 'Não informado' }}
+Login: {{ dados_acesso.principal['usuario_login'] if dados_acesso.principal else 'Não informado' }}
+Senha: {{ dados_acesso.principal['senha_cripto'] if dados_acesso.principal else 'Não informado' }}
+
+=== ACESSO PROTHEUS ===
+Usuário: {{ dados_acesso.protheus['usuario_login'] if dados_acesso.protheus else 'Não informado' }}
+Senha: {{ dados_acesso.protheus['senha_cripto'] if dados_acesso.protheus else 'Não informado' }}
+
+=== ACESSO BANCO DE DADOS ===
+Usuário: {{ dados_acesso.banco['usuario_login'] if dados_acesso.banco else 'Não informado' }}
+Senha: {{ dados_acesso.banco['senha_cripto'] if dados_acesso.banco else 'Não informado' }}
+
+=== ACESSO REMOTO E WINDOWS ===
+ID AnyDesk: {{ dados_acesso.anydesk['usuario_login'] if dados_acesso.anydesk else 'Não informado' }}
+Senha AnyDesk: {{ dados_acesso.anydesk['senha_cripto'] if dados_acesso.anydesk else 'Não informado' }}
+Usuário Windows: {{ dados_acesso.windows['usuario_login'] if dados_acesso.windows else 'Não informado' }}
+Senha Windows: {{ dados_acesso.windows['senha_cripto'] if dados_acesso.windows else 'Não informado' }}
+
+=== PORTAL DO CLIENTE ===
+URL: {{ cliente['portal_url'] or 'Não informada' }}
+Login: {{ cliente['portal_login'] or 'Não informado' }}
+Senha: {{ cliente['portal_senha'] or 'Não informada' }}
+
+=== DESCRIÇÃO / OBSERVAÇÕES ===
+{{ cliente['observacoes'] or 'Nenhuma descrição cadastrada.' }}
+    </textarea>
+
+    <div class="aviso-copiado" id="avisoCopiado">Dados copiados com sucesso!</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnCopiar = document.getElementById('btnCopiar');
+            const textoOculto = document.getElementById('textoOculto');
+            const aviso = document.getElementById('avisoCopiado');
+
+            btnCopiar.addEventListener('click', function() {
+                textoOculto.select();
+                textoOculto.setSelectionRange(0, 99999);
+
+                navigator.clipboard.writeText(textoOculto.value).then(() => {
+                    aviso.style.display = 'block';
+                    setTimeout(() => {
+                        aviso.style.display = 'none';
+                    }, 3000);
+                }).catch(err => {
+                    alert('Erro ao copiar. Seu navegador pode não suportar essa função.');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Cliente — Gestão Acessos</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background-color: #f9fafb; display: flex; min-height: 100vh; color: #111827; }
+        
+        .sidebar { width: 260px; background-color: #6c63ff; color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 10; }
+        .sidebar-header { padding: 30px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header h2 { font-size: 20px; font-weight: 800; }
+        .sidebar nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.8); text-decoration: none; padding: 14px 16px; border-radius: 8px; font-weight: 500; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
+        .nav-item.active { background-color: #ffffff; color: #6c63ff; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .nav-item svg { width: 20px; height: 20px; }
+
+        .main-content { flex: 1; margin-left: 260px; padding: 40px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .topbar h1 { font-size: 28px; font-weight: 700; }
+        .btn-voltar { background-color: #e5e7eb; color: #374151; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 14px; display: inline-block; text-align: center; }
+        .btn-voltar:hover { background-color: #d1d5db; }
+
+        .form-container { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 32px; border: 1px solid #f3f4f6; max-width: 900px; }
+        .section-title { font-size: 16px; font-weight: 700; color: #6c63ff; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #f3f4f6; margin-top: 24px; }
+        .section-title:first-child { margin-top: 0; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; }
+        .form-control:focus { border-color: #6c63ff; box-shadow: 0 0 0 3px rgba(108,99,255,0.1); }
+        .radio-group { display: flex; gap: 20px; margin-top: 8px; }
+        .radio-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #374151; }
+        .radio-label input { accent-color: #6c63ff; width: 18px; height: 18px; }
+        .current-img-box { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+        .current-img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .upload-area { border: 2px dashed #d1d5db; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; position: relative; background: #f9fafb; }
+        .upload-area input { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; }
+        .btn-save { background-color: #6c63ff; color: white; border: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; margin-top: 10px; width: 100%; transition: 0.2s; }
+        .btn-save:hover { background-color: #5a52d5; }
+        
+        .alert-success { padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; background: #dcfce7; color: #166534; border: 1px solid #86efac; font-size: 14px; }
+        .alert-error { padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; font-size: 14px; }
+
+        /* RESPONSIVIDADE PARA CELULAR */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar { position: relative; width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; }
+            .sidebar-header { display: none; }
+            .sidebar nav { flex-direction: row; padding: 0; gap: 10px; width: 100%; overflow-x: auto; }
+            .nav-item { white-space: nowrap; padding: 10px 15px; font-size: 14px; }
+            
+            .main-content { margin-left: 0; padding: 20px; }
+            .topbar { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .btn-voltar { width: 100%; }
+            
+            .form-container { padding: 20px; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            <h2>Gestão Acessos</h2>
+        </div>
+        <nav>
+            <a href="/dashboard" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Dashboard</a>
+            <a href="/clientes" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Clientes</a>
+            {% if session.get('usuario_nivel') == 'ADM' %}
+            <a href="/usuarios" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Usuários</a>
+            {% endif %}
+            {% if session.get('usuario_nivel') == 'ADM' or 'auditoria_visualizar' in session.get('usuario_permissoes', '') %}
+            <a href="/auditoria" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Auditoria</a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h1>Editar Cliente: {{ cliente['nome_empresa'] }}</h1>
+            <a href="{{ url_for('clientes.index') }}" class="btn-voltar">Voltar para Lista</a>
+        </div>
+
+        {% with mensagens = get_flashed_messages(with_categories=true) %}
+            {% for categoria, msg in mensagens %}
+                <div class="alert-{{ categoria if categoria != 'message' else 'success' }}">{{ msg }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="form-container">
+            <form method="POST" enctype="multipart/form-data">
+                
+                <div class="section-title">1. Identificação do Cliente</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Nome da Empresa</label>
+                        <input type="text" name="nome_empresa" class="form-control" required value="{{ cliente['nome_empresa'] }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome de Identificação (Sigla)</label>
+                        <input type="text" name="nome_identificacao" class="form-control" value="{{ cliente['nome_identificacao'] or '' }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Imagem / Logo do Cliente</label>
+                    <div class="current-img-box">
+                        {% if cliente['imagem_path'] %}
+                            <img src="{{ url_for('static', filename='uploads/' + cliente['imagem_path']) }}" class="current-img">
+                            <span style="font-size: 13px; color: #6b7280;">Imagem atual. Envie outra abaixo para substituir.</span>
+                        {% else %}
+                            <span style="font-size: 13px; color: #6b7280;">Nenhuma imagem cadastrada.</span>
+                        {% endif %}
+                    </div>
+                    <div class="upload-area">
+                        <input type="file" name="imagem" accept="image/*">
+                        <div style="color: #6b7280; font-size: 14px;"><strong>Clique para enviar</strong> uma nova imagem</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Tipo de Cliente</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="tipo_cliente" value="LOCAL" {% if cliente['tipo_cliente'] == 'LOCAL' or not cliente['tipo_cliente'] %}checked{% endif %}> Cliente Local</label>
+                            <label class="radio-label"><input type="radio" name="tipo_cliente" value="T-CLOUD" {% if cliente['tipo_cliente'] == 'T-CLOUD' %}checked{% endif %}> Cliente T-Cloud</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Versão do Protheus</label>
+                        <input type="text" name="versao_protheus" class="form-control" placeholder="Ex: 12.1.23" value="{{ cliente['versao_protheus'] or '' }}">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Status do Cliente</label>
+                        <select name="status" class="form-control">
+                            <option value="ativo" {% if cliente['status'] == 'ativo' %}selected{% endif %}>Ativo</option>
+                            <option value="inativo" {% if cliente['status'] == 'inativo' %}selected{% endif %}>Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-title">2. Acesso do Sistema</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>URL do Site / Endereço IP</label>
+                        <input type="text" name="url_acesso" class="form-control" value="{{ dados_acesso.principal['endereco'] if dados_acesso.principal else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Login de Acesso</label>
+                        <input type="text" name="login_acesso" class="form-control" value="{{ dados_acesso.principal['usuario_login'] if dados_acesso.principal else '' }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Senha de Acesso</label>
+                    <input type="text" name="senha_acesso" class="form-control" value="{{ dados_acesso.principal['senha_cripto'] if dados_acesso.principal else '' }}">
+                </div>
+
+                <div class="section-title">3. Acesso Protheus</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Usuário Protheus</label>
+                        <input type="text" name="protheus_login" class="form-control" value="{{ dados_acesso.protheus['usuario_login'] if dados_acesso.protheus else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha Protheus</label>
+                        <input type="text" name="protheus_senha" class="form-control" value="{{ dados_acesso.protheus['senha_cripto'] if dados_acesso.protheus else '' }}">
+                    </div>
+                </div>
+
+                <div class="section-title">4. Acesso ao Banco de Dados</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Usuário do Banco</label>
+                        <input type="text" name="db_login" class="form-control" value="{{ dados_acesso.banco['usuario_login'] if dados_acesso.banco else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha do Banco</label>
+                        <input type="text" name="db_senha" class="form-control" value="{{ dados_acesso.banco['senha_cripto'] if dados_acesso.banco else '' }}">
+                    </div>
+                </div>
+
+                <div class="section-title">5. Acesso Remoto e Windows</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>ID do AnyDesk</label>
+                        <input type="text" name="anydesk_login" class="form-control" value="{{ dados_acesso.anydesk['usuario_login'] if dados_acesso.anydesk else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha do AnyDesk</label>
+                        <input type="text" name="anydesk_senha" class="form-control" value="{{ dados_acesso.anydesk['senha_cripto'] if dados_acesso.anydesk else '' }}">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Usuário do Windows</label>
+                        <input type="text" name="windows_login" class="form-control" value="{{ dados_acesso.windows['usuario_login'] if dados_acesso.windows else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha do Windows</label>
+                        <input type="text" name="windows_senha" class="form-control" value="{{ dados_acesso.windows['senha_cripto'] if dados_acesso.windows else '' }}">
+                    </div>
+                </div>
+
+                <div class="section-title">6. Portal do Cliente (Se houver)</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>URL do Portal</label>
+                        <input type="text" name="portal_url" class="form-control" value="{{ cliente['portal_url'] or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Login do Portal</label>
+                        <input type="text" name="portal_login" class="form-control" value="{{ cliente['portal_login'] or '' }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Senha do Portal</label>
+                    <input type="text" name="portal_senha" class="form-control" value="{{ cliente['portal_senha'] or '' }}">
+                </div>
+
+                <div class="section-title">7. Descrição / Observações</div>
+                <div class="form-group">
+                    <label>Informações Adicionais</label>
+                    <textarea name="observacoes" class="form-control" rows="4" placeholder="Digite aqui qualquer informação extra importante...">{{ cliente['observacoes'] or '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn-save">Salvar Alterações</button>
+            </form>
+        </div>
+    </main>
+
+</body>
+</html>

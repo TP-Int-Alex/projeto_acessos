@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Senha — Gestão Acessos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { display: flex; height: 100vh; background-color: #fff; overflow: hidden; }
+        .left-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .form-wrapper { width: 100%; max-width: 420px; }
+        .form-wrapper h1 { font-size: 32px; font-weight: 800; color: #111827; margin-bottom: 10px; }
+        .form-wrapper p { color: #6b7280; margin-bottom: 30px; font-size: 15px; }
+        .input-group { position: relative; margin-bottom: 24px; }
+        .input-group label { position: absolute; top: -10px; left: 14px; background: #fff; padding: 0 6px; font-size: 13px; font-weight: 600; color: #374151; z-index: 1; }
+        .input-field { width: 100%; padding: 16px 14px; font-size: 15px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; color: #111827; }
+        .input-field:focus { border-color: #6c63ff; }
+        .btn-submit { width: 100%; padding: 16px; background-color: #6c63ff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
+        .btn-submit:hover { background-color: #5a52d5; }
+        .footer-text { text-align: center; font-size: 14px; color: #6b7280; }
+        .footer-text a { color: #6c63ff; text-decoration: none; font-weight: 600; }
+        .right-panel { flex: 1.2; background-color: #6c63ff; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 30px 0 0 30px; color: white; padding: 40px; }
+        .right-panel h2 { font-size: 24px; font-weight: 700; text-align: center; max-width: 400px; }
+        .alert-success { background-color: #dcfce7; color: #166534; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 24px; border: 1px solid #86efac; }
+        .alert-error { background-color: #fee2e2; color: #b91c1c; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 24px; border: 1px solid #f87171; }
+        @media (max-width: 900px) { body { flex-direction: column; overflow-y: auto; } .right-panel { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="left-panel">
+        <div class="form-wrapper">
+            <h1>Recuperar senha</h1>
+            <p>Digite seu e-mail cadastrado para receber o link de recuperação.</p>
+            
+            {% with mensagens = get_flashed_messages(with_categories=true) %}
+                {% for categoria, msg in mensagens %}
+                    <div class="alert-{{ categoria if categoria == 'success' else 'error' }}">{{ msg }}</div>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('auth.esqueci_senha') }}">
+                <input type="hidden" name="csrf_token" value="{{ session.get('csrf_token', '') }}">
+                <div class="input-group">
+                    <label>E-mail</label>
+                    <input type="email" name="email" class="input-field" required autofocus>
+                </div>
+                <button type="submit" class="btn-submit">Enviar link de recuperação</button>
+            </form>
+            <div class="footer-text">
+                Lembrou a senha? <a href="{{ url_for('auth.login') }}">Voltar ao login</a>
+            </div>
+        </div>
+    </div>
+    <div class="right-panel">
+        <h2>Não se preocupe, vamos ajudar você a recuperar o acesso.</h2>
+    </div>
+</body>
+</html>

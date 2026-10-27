@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ titulo }}</title>
+    <style>
+        /* Configuração do papel */
+        @page { 
+            size: {% if orientacao == 'landscape' %}A4 landscape{% else %}A4 portrait{% endif %}; 
+            margin: 1cm; 
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: white; color: #111827; padding: 20px; }
+        
+        .header-print { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #6c63ff; padding-bottom: 20px; }
+        .header-print h1 { font-size: 24px; color: #6c63ff; }
+        .header-print p { font-size: 14px; color: #6b7280; }
+
+        .btn-print { background-color: #6c63ff; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-print:hover { background-color: #5a52d5; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 10px; border: 1px solid #e5e7eb; text-align: left; }
+        th { background-color: #f9fafb; color: #374151; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+        td { color: #4b5563; }
+        
+        .logo-print { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+        
+        /* Esconde os botões na hora de imprimir */
+        @media print {
+            .no-print { display: none !important; }
+            .header-print { border-bottom-color: #111827; }
+            .header-print h1 { color: #111827; }
+        }
+    </style>
+</head>
+<body onload="window.print()"> <!-- Dispara a impressão automaticamente -->
+
+    <div class="header-print">
+        <div>
+            <h1>{{ titulo }}</h1>
+            <p>Gestão Acessos - Gerado em: <span id="data-geracao"></span></p>
+        </div>
+        <button class="btn-print no-print" onclick="window.print()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Imprimir / Salvar PDF
+        </button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px;">Logo</th>
+                <th>Cliente</th>
+                <th>Tipo</th>
+                <th>Versão</th>
+                <th>Status</th>
+                <th>Data Cadastro</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in clientes %}
+            <tr>
+                <td>
+                    {% if c['imagem_path'] %}
+                        <img src="{{ url_for('static', filename='uploads/' + c['imagem_path'], _external=True) }}" class="logo-print">
+                    {% else %}
+                        <div style="width:40px; height:40px; background:#e5e7eb; border-radius:6px; text-align:center; line-height:40px; font-weight:bold; color:#6c63ff;">{{ c['nome_empresa'][0] | upper }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <strong>{{ c['nome_empresa'] }}</strong><br>
+                    <span style="font-size:11px; color:#6b7280;">{{ c['nome_identificacao'] or '-' }}</span>
+                </td>
+                <td>{{ c['tipo_cliente'] or 'LOCAL' }}</td>
+                <td>{{ c['versao_protheus'] or '-' }}</td>
+                <td>{{ 'Ativo' if c['status'] != 'inativo' else 'Inativo' }}</td>
+                <td>{{ c['criado_em'][:10] if c['criado_em'] else '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 20px;">Nenhum cliente encontrado para os filtros selecionados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        document.getElementById('data-geracao').innerText = new Date().toLocaleString('pt-BR');
+    </script>
+</body>
+</html>
